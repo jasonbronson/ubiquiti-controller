@@ -21,6 +21,16 @@ RUN wget https://dl.ubnt.com/unifi/5.10.25/unifi_sysvinit_all.deb; \
 #COPY unifi.init /usr/lib/unifi/bin/unifi.init
 #RUN chmod +x /usr/lib/unifi/bin/unifi.init
 
+EXPOSE 3478/udp
 EXPOSE 8080
 EXPOSE 8443
+EXPOSE 8880
+EXPOSE 8843
+EXPOSE 6789
+EXPOSE 27117
+EXPOSE 5656-5699/udp
+EXPOSE 10001/udp
+EXPOSE 1900/udp
+
+
 CMD ["/usr/bin/jsvc", "-nodetach" , "-home", "/usr/lib/jvm/java-8-openjdk-amd64", "-cp", "/usr/share/java/commons-daemon.jar:/usr/lib/unifi/lib/ace.jar", "-pidfile", "/var/run/unifi/unifi.pid", "-procname", "unifi", "-outfile", "SYSLOG", "-errfile", "SYSLOG", "-Djava.awt.headless=true", "-Dfile.encoding=UTF-8", "-Xmx1024M", "com.ubnt.ace.Launcher", "start"]
