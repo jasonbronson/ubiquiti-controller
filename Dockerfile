@@ -20,6 +20,9 @@ RUN wget https://dl.ubnt.com/unifi/5.10.25/unifi_sysvinit_all.deb; \
 
 #COPY unifi.init /usr/lib/unifi/bin/unifi.init
 #RUN chmod +x /usr/lib/unifi/bin/unifi.init
+RUN mkdir /var/log/unifi
+RUN ln -s /dev/stdout /var/log/unifi/server.log
+RUN ln -s /dev/stdout /var/log/unifi/mongod.log
 
 EXPOSE 3478/udp
 EXPOSE 8080
