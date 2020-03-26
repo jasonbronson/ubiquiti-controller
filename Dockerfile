@@ -1,4 +1,7 @@
-FROM library/ubuntu:16.04
+FROM ubuntu:16.04
+
+ENV DEBIAN_FRONTEND noninteractive
+
 RUN apt-get update && apt-get install -y -f \
     wget \
     openjdk-8-jre-headless \
@@ -13,10 +16,10 @@ RUN apt-get update && apt-get install -y -f \
 
 RUN echo exit 0 > /usr/sbin/policy-rc.d
 #RUN export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
-RUN export DEBIAN_FRONTEND="noninteractive"
 RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
-RUN wget https://dl.ubnt.com/unifi/5.10.25/unifi_sysvinit_all.deb; \ 
-    dpkg -i unifi_sysvinit_all.deb
+
+ADD https://dl.ui.com/unifi/5.12.66/unifi_sysvinit_all.deb /tmp/unifi_sysvinit_all.deb
+RUN dpkg -i /tmp/unifi_sysvinit_all.deb
 
 #COPY unifi.init /usr/lib/unifi/bin/unifi.init
 #RUN chmod +x /usr/lib/unifi/bin/unifi.init
