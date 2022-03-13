@@ -1,7 +1,7 @@
 # Installation procedure documented here:
 # https://help.ubnt.com/hc/en-us/articles/220066768-UniFi-How-to-Install-and-Update-via-APT-on-Debian-or-Ubuntu
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -23,22 +23,17 @@ RUN wget -qO /etc/apt/trusted.gpg.d/unifi-repo.gpg https://dl.ui.com/unifi/unifi
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-3.4.asc | apt-key add -
 RUN echo "deb https://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse" > /etc/apt/sources.list.d/mongodb-org-3.4.list
 
-# Prevent JDK11 installation
-# RUN apt-mark hold openjdk-11-*
-
 # Prevent services from starting at installation
 RUN echo exit 0 > /usr/sbin/policy-rc.d
 
 # Install Unifi-Controller
 RUN apt-get update -qq \
+    && apt-mark hold openjdk-11-* openjdk-17-* \
     && apt-get install -qq -y \
+       openjdk-8-jre-headless \
        unifi \
     && apt-get clean \
     && rm -rf /var/lib/apt/list/*
-
-# Pipe logs to stdout so "docker logs" can show them
-RUN ln -s /dev/stdout /var/log/unifi/server.log
-RUN ln -s /dev/stdout /var/log/unifi/mongod.log
 
 VOLUME /var/lib/unifi
 
@@ -46,4 +41,4 @@ EXPOSE 8080 8443
 # Are these really needed?
 # EXPOSE 3478/udp 8880 8843 6789 27117 5656-5699/udp 10001/udp 1900/udp
 
-CMD ["/usr/bin/jsvc", "-nodetach" , "-home", "/usr/lib/jvm/java-8-openjdk-amd64", "-cp", "/usr/share/java/commons-daemon.jar:/usr/lib/unifi/lib/ace.jar", "-pidfile", "/var/run/unifi/unifi.pid", "-procname", "unifi", "-outfile", "SYSLOG", "-errfile", "SYSLOG", "-Djava.awt.headless=true", "-Dfile.encoding=UTF-8", "-Xmx1024M", "com.ubnt.ace.Launcher", "start"]
+CMD ["/usr/bin/jsvc", "-nodetach" , "-home", "/usr/lib/jvm/java-8-openjdk-amd64", "-cp", "/usr/share/java/commons-daemon.jar:/usr/lib/unifi/lib/ace.jar", "-pidfile", "/var/run/unifi/unifi.pid", "-procname", "unifi", "-outfile", "/dev/stdout", "-errfile", "/dev/stderr", "-Djava.awt.headless=true", "-Dfile.encoding=UTF-8", "-Xmx1024M", "com.ubnt.ace.Launcher", "start"]
