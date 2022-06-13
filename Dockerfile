@@ -1,39 +1,44 @@
-FROM library/ubuntu:16.04
-RUN apt-get update && apt-get install -y -f \
+# Installation procedure documented here:
+# https://help.ubnt.com/hc/en-us/articles/220066768-UniFi-How-to-Install-and-Update-via-APT-on-Debian-or-Ubuntu
+
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# Install prerequisite packages
+RUN apt-get update -qq && apt-get install -qq -y \
+    ca-certificates \
+    apt-transport-https \
     wget \
-    openjdk-8-jre-headless \
-    gnupg \
-    curl \
-    libcap2 \
-    binutils \
-    jsvc \
-    mongodb \
+    gnupg2 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Add Ubiquiti repository source
+RUN echo 'deb https://www.ui.com/downloads/unifi/debian stable ubiquiti' > /etc/apt/sources.list.d/100-ubnt-unifi.list
+# "ADD" would theoricaly do the job, but messes access rights
+RUN wget -qO /etc/apt/trusted.gpg.d/unifi-repo.gpg https://dl.ui.com/unifi/unifi-repo.gpg 
+
+# Add mongodb repository source
+RUN wget -qO - https://www.mongodb.org/static/pgp/server-3.4.asc | apt-key add -
+RUN echo "deb https://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse" > /etc/apt/sources.list.d/mongodb-org-3.4.list
+
+# Prevent services from starting at installation
 RUN echo exit 0 > /usr/sbin/policy-rc.d
-#RUN export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
-RUN export DEBIAN_FRONTEND="noninteractive"
-RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
-RUN wget https://dl.ubnt.com/unifi/5.10.25/unifi_sysvinit_all.deb; \ 
-    dpkg -i unifi_sysvinit_all.deb
 
-#COPY unifi.init /usr/lib/unifi/bin/unifi.init
-#RUN chmod +x /usr/lib/unifi/bin/unifi.init
-#RUN mkdir /var/log/unifi
-RUN ln -s /dev/stdout /var/log/unifi/server.log
-RUN ln -s /dev/stdout /var/log/unifi/mongod.log
+# Install Unifi-Controller
+RUN apt-get update -qq \
+    && apt-mark hold openjdk-11-* openjdk-17-* \
+    && apt-get install -qq -y \
+       openjdk-8-jre-headless \
+       unifi \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/list/*
 
-EXPOSE 3478/udp
-EXPOSE 8080
-EXPOSE 8443
-EXPOSE 8880
-EXPOSE 8843
-EXPOSE 6789
-EXPOSE 27117
-EXPOSE 5656-5699/udp
-EXPOSE 10001/udp
-EXPOSE 1900/udp
+VOLUME /var/lib/unifi
 
+EXPOSE 8080 8443
+# Are these really needed?
+# EXPOSE 3478/udp 8880 8843 6789 27117 5656-5699/udp 10001/udp 1900/udp
 
-CMD ["/usr/bin/jsvc", "-nodetach" , "-home", "/usr/lib/jvm/java-8-openjdk-amd64", "-cp", "/usr/share/java/commons-daemon.jar:/usr/lib/unifi/lib/ace.jar", "-pidfile", "/var/run/unifi/unifi.pid", "-procname", "unifi", "-outfile", "SYSLOG", "-errfile", "SYSLOG", "-Djava.awt.headless=true", "-Dfile.encoding=UTF-8", "-Xmx1024M", "com.ubnt.ace.Launcher", "start"]
+CMD ["/usr/bin/jsvc", "-nodetach" , "-home", "/usr/lib/jvm/java-8-openjdk-amd64", "-cp", "/usr/share/java/commons-daemon.jar:/usr/lib/unifi/lib/ace.jar", "-pidfile", "/var/run/unifi/unifi.pid", "-procname", "unifi", "-outfile", "/dev/stdout", "-errfile", "/dev/stderr", "-Djava.awt.headless=true", "-Dfile.encoding=UTF-8", "-Xmx1024M", "com.ubnt.ace.Launcher", "start"]
